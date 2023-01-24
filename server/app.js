@@ -1,10 +1,17 @@
-require('dotenv').config()
-const express = require('express')
+import express from 'express'
+import cookieParser from 'cookie-parser'
+import cors from 'cors'
+import morgan from 'morgan'
+
 const app = express()
 
-// Getting all the Routes
-const Routes = require("./routes/userRoutes")
+// miidlewares
+app.use(express.json())
+app.use(express.urlencoded({extended: true}))
+app.use(cors())
+app.use(cookieParser())
 
-app.use('/', Routes)
+// morgan
+app.use(morgan('tiny'))
 
-module.exports = app;
+export default app;
