@@ -3,6 +3,7 @@ import asyncHandler from '../services/asyncHandler'
 import customError from '../utils/customError'
 import crypto from 'crypto'
 import cookieOptions from "../utils/cookieOptions"
+import mailHelper from "../utils/mailHelper"
 
 /* 
   * @SIGNUP
@@ -105,7 +106,7 @@ export const logout = asyncHandler(async (_req, res) => {
 
 /* 
   * @FORGOT_PASSWORD
-  * @route http://localhost:4000/api/auth/password/forgot
+  * @route http://localhost:4000/api/auth/password/reset
   * description User will provide the eamail and we provide a token for forgot password
   * parameters email
   * returns success message - email sent
@@ -124,4 +125,31 @@ export const forgotPassword = asyncHandler(async (req, res) => {
         throw new customError("User is not registered", 404)
     }
     
+    const resetToken = user.generateFPT()
+
+    await user.save({validateBeforeSave: false})
+
+    const resetUrl = `${req.protocol}://${req.get("host")}/api/password/reset/${resetToken}`
+
+    const text = `Your password reset url is \n\n ${resetUrl}\n\n`
+
+    try {
+        await mailHelper({
+            email: user.email,
+            subject: "Password reset email for website",
+            text: text
+        })
+        res.status(200).json({
+            success: true,
+            message: `Email sent to ${user.email}`
+        })
+    } catch (error) {
+        // Clear all unnecessary entries from database
+        user.forgotPasswordToken = undefined
+        user.forgotPasswordExpiry = undefined
+
+        await user.save({validateBeforeSave: false})
+
+        throw new customError(error.message || "Email sent failed", 500)
+    }
 })
