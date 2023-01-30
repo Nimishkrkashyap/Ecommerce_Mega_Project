@@ -27,8 +27,8 @@ export const createCollection = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: "Collection created successflly",
-    collection
-  })
+    collection,
+  });
 });
 
 /*
@@ -38,35 +38,62 @@ export const createCollection = asyncHandler(async (req, res) => {
  * @parameters name
  * @returns Collection Object
  */
+
 export const updateCollection = asyncHandler(async (req, res) => {
-    // get the existing collection id for update collection
-    const {id: collectionId} =  req.params
+  // get the existing collection id for update collection
+  const { id: collectionId } = req.params;
 
-    const {name} = req.body
+  const { name } = req.body;
 
-    if (!name) {
-        throw new customError("Please provide a updated collection name", 400)
+  if (!name) {
+    throw new customError("Please provide a updated collection name", 400);
+  }
+
+  let updateCollection = await Collection.findByIdAndUpdate(
+    collectionId,
+    {
+      name,
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  if (!updateCollection) {
+    throw new customError("Updated collection not found", 400);
+  }
+
+  // send response to frontend
+  res.status(200).json({
+    success: true,
+    message: "Collection updated succesfully",
+    updateCollection,
+  });
+});
+
+/*
+ * @DELETE_COLLECTION
+ * @route http://localhost:5000/api/collection
+ * @description update controller for updating new collection
+ * @parameters name
+ * @returns Collection Object
+ */
+
+export const deleteCollection = asyncHandler(async (req, res) => {
+    const {id: collectionId} = req.params
+
+    const collectionDelete = await Collection.findByIdAndDelete(collectionId)
+
+    if (!collectionDelete) {
+        throw new customError("Collection not found", 400)
     }
 
-    let updateCollection = await Collection.findByIdAndUpdate(
-        collectionId,
-        {
-            name
-        },
-        {
-            new: true,
-            runValidators: true
-        }
-    )
-
-    if (!updateCollection) {
-        throw new customError("Updated collection not found", 400)
-    }
+    collectionDelete.remove()
 
     // send response to frontend
     res.status(200).json({
         success: true,
-        message: "Collection updated succesfully",
-        updateCollection
+        message: "Collection deleted succesfully"
     })
 })
